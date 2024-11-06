@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Volunteer Details</title>
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Volunteer Management Tool</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+    <style>
+        .btn-mark-present {
+            background-color: #28a745; 
+            color: white;
+        }
+        .btn-mark-present:hover {
+            background-color: #218838; 
+            color: white;
+        }
+    
+        .btn-mark-absent {
+            background-color: #eca841; 
+            color: white;
+        }
+        .btn-mark-absent:hover {
+            background-color: #f1c80f; 
+            color: white;
+        }
+    </style>
+    
+    <div class="container mt-4">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    
+        <h1>Volunteer Details</h1>
+        <div class="card mb-4">
+            <div class="card-header">
+                {{ volunteer.full_name }}
+            </div>
+            <div class="card-body">
+                <p><strong>Phone number:</strong> {{ volunteer.contact_phone}}</p>
+                <p><strong>Email:</strong> {{ volunteer.contact_email}}</p>
+                <p><strong>Emergency contact name:</strong> {{ volunteer.emergency_contact_name }}</p>
+                <p><strong>Emergency contact phone:</strong> {{ volunteer.emergency_contact_phone }}</p>
+                <p><strong>Address:</strong> {{ volunteer.address }}</p>
+                <p><strong>Date of Birth:</strong> {{ volunteer.date_of_birth }}</p>
+                <p><strong>Preferred Teams:</strong> {{ ', '.join(volunteer.preferred_teams) }}</p>
+                <p><strong>Skills:</strong> {{ volunteer.skills }}</p>
+                <p><strong>Additional Comments:</strong> {{ volunteer.additional_comments }}</p>
+            </div>
+        </div>
+    
+        <h2>Assign to Teams</h2>
+        <form method="post">
+            <div class="form-group">
+                {% for team in teams %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="assigned_teams" id="assigned_team{{ loop.index }}" value="{{ team }}" {% if team in volunteer.preferred_teams or team in volunteer.assigned_teams %}checked{% endif %}>
+                        <label class="form-check-label" for="assigned_team{{ loop.index }}">{{ team }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="new_team">Add New Team</label>
+                <input type="text" class="form-control" name="new_team" id="new_team">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Teams</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Volunteer List</a>
+        </form>
+    
+        <h2 class="mt-4">Logged Hours</h2>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Hours</th>
+                    <th>Activity information</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in volunteer.hours %}
+                    <tr id="hours-row-{{ entry.date }}">
+                        <td>{{ entry.date }}</td>
+                        <td id="hours-{{ entry.date }}">{{ entry.hours }}</td>
+                        <td id="notes-{{ entry.date }}">{{ entry.notes }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="toggleHoursForm('{{ entry.date }}')">Edit</button>
+                            <form action="{{ url_for('remove_hours', volunteer_id=volunteer.id, date=entry.date) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this hours entry?');">Remove</button>
+                            </form>
+                            
+                            <form id="hours-form-{{ entry.date }}" action="{{ url_for('update_hours', volunteer_id=volunteer.id, date=entry.date) }}" method="post" style="display:none;">
+                                <input type="number" name="hours" min="0" class="form-control form-control-sm d-inline w-25" placeholder="Hours" required>
+                                <input type="text" name="notes" class="form-control form-control-sm d-inline w-50" placeholder="Notes" required>
+                                <button type="button" class="btn btn-sm btn-success" onclick="updateHours('{{ entry.date }}')">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    
+        <h2 class="mt-4">Attendance</h2>
+        <ul class="list-group">
+            {% for date in volunteer.attendance %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ date }}
+                    <span class="badge badge-success" id="badge-{{ date }}">Present</span>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="toggleAttendanceForm('{{ date }}')">Edit</button>
+                        <form action="{{ url_for('remove_attendance', volunteer_id=volunteer.id, date=date) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this attendance date?');">Remove</button>
+                        </form>
+                        
+                        <form onsubmit="toggleAttendance(event, '{{ date }}')" method="post" style="display:inline; display: none;" id="attendance-form-{{ date }}">
+                            <input type="hidden" name="date" value="{{ date }}">
+                            <input type="hidden" id="status-{{ date }}" name="status" value="Absent">
+                            <button type="submit" class="btn btn-sm btn-warning btn-mark-absent" id="toggle-button-{{ date }}">Mark as Absent</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    
+        <div class="mt-4">
+            <a class="btn btn-secondary" href="{{ url_for('track_hours', volunteer_id=volunteer.id) }}">Log Hours</a>
+            <a class="btn btn-secondary" href="{{ url_for('index') }}">Back to Volunteer List</a>
+            <a class="btn btn-primary" href="{{ url_for('track_attendance') }}">Track Attendance</a>
+            
+            <form action="{{ url_for('delete_volunteer', volunteer_id=volunteer.id) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to remove this volunteer?');">Remove Volunteer</button>
+            </form>
+        </div>
+    </div>
+
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    
+    <script>
+        function toggleAttendanceForm(date) {
+            const form = document.getElementById('attendance-form-' + date);
+            const badge = document.getElementById('badge-' + date);
+            const toggleButton = document.getElementById('toggle-button-' + date);
+            const statusInput = document.getElementById('status-' + date);
+    
+            if (badge.textContent === 'Present') {
+                toggleButton.textContent = 'Mark as Absent';
+                statusInput.value = 'Absent';
+                toggleButton.classList.remove('btn-mark-present');
+                toggleButton.classList.add('btn-mark-absent');
+            } else {
+                toggleButton.textContent = 'Mark as Present';
+                statusInput.value = 'Present';
+                toggleButton.classList.remove('btn-mark-absent');
+                toggleButton.classList.add('btn-mark-present');
+            }
+    
+            form.style.display = form.style.display === 'none' ? 'inline' : 'none';
+        }
+    
+        function toggleAttendance(event, date) {
+            event.preventDefault();
+    
+            const badge = document.getElementById('badge-' + date);
+            const form = document.getElementById('attendance-form-' + date);
+            const toggleButton = document.getElementById('toggle-button-' + date);
+            const statusInput = document.getElementById('status-' + date);
+            const newStatus = statusInput.value;
+    
+            badge.textContent = newStatus;
+            if (newStatus === 'Absent') {
+                badge.classList.remove('badge-success');
+                badge.classList.add('badge-danger');
+                toggleButton.textContent = 'Mark as Present';
+                statusInput.value = 'Present';
+                toggleButton.classList.remove('btn-mark-absent');
+                toggleButton.classList.add('btn-mark-present');
+            } else {
+                badge.classList.remove('badge-danger');
+                badge.classList.add('badge-success');
+                toggleButton.textContent = 'Mark as Absent';
+                statusInput.value = 'Absent';
+                toggleButton.classList.remove('btn-mark-present');
+                toggleButton.classList.add('btn-mark-absent');
+            }
+    
+            form.style.display = 'none';
+        }
+    
+        function toggleHoursForm(date) {
+            const form = document.getElementById('hours-form-' + date);
+            form.style.display = form.style.display === 'none' ? 'inline' : 'none';
+        }
+    
+        function updateHours(date) {
+    const form = document.getElementById('hours-form-' + date);
+    const hoursInput = form.querySelector('input[name="hours"]');
+    const notesInput = form.querySelector('input[name="notes"]');
+
+    
+    const formData = new FormData();
+    formData.append('hours', hoursInput.value);
+    formData.append('notes', notesInput.value);
+
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            
+            document.getElementById('hours-' + date).textContent = hoursInput.value;
+            document.getElementById('notes-' + date).textContent = notesInput.value;
+
+            
+            form.style.display = 'none';
+        } else {
+            
+            alert('Failed to update hours: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+    </script>
+    
+</body>
+</html>

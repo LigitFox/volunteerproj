@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Track Hours</title>
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Volunteer Management Tool</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>Log Hours for {{ volunteer.full_name }}</h1>
+        
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="post">
+            <div class="form-group">
+                <label for="date">Date *</label>
+                <input type="date" class="form-control" name="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="hours">Hours *</label>
+                <input type="number" step="0.1" min="0.1" class="form-control" name="hours" id="hours" required>
+            </div>
+            
+
+            <div class="form-group">
+                <label for="notes">Activity information *</label>
+                <textarea class="form-control" name="notes" id="notes" rows="3" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Log Hours</button>
+            <a href="{{ url_for('volunteer_detail', volunteer_id=volunteer.id) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            var today = new Date(new Date().setDate(new Date().getDate() )).toISOString().split('T')[0];
+            document.getElementById("date").setAttribute("max", today);
+        });
+    </script>
+</body>
+</html>

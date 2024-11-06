@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .calendar {
+      --side-padding: 20px;
+      --border-radius: 34px;
+      --accent-br: 15px;
+
+      width: 500px;
+      height: 900px;
+    }
+
+    .calendar select {
+      background-color: #f3f4f6;
+      padding: 15px 20px;
+    }
+
+    .calendar__opts,
+    .calendar__buttons {
+      background-color: #e4e4e4;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 15px;
+    }
+
+    .calendar__opts {
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+      padding: 20px var(--side-padding);
+    }
+
+    .calendar__body {
+      background-image: linear-gradient(to bottom, #f3f4f6, #fff);
+    }
+
+    .calendar__days {
+      background-color: #e4e4e4;
+      padding: 0 var(--side-padding) 10px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar__days > div {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.02rem;
+      color: #8f8f8f;
+    }
+
+    .calendar__dates {
+      padding: 10px var(--side-padding);
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar__date {
+      --height: calc(400px / 6 - var(--side-padding));
+      text-align: center;
+      height: var(--height);
+      line-height: var(--height);
+      font-weight: 600;
+      font-size: 1.02rem;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .calendar__date {
+  --height: calc(400px / 6 - var(--side-padding));
+  text-align: center;
+  height: var(--height);
+  line-height: var(--height);
+  font-weight: 600;
+  font-size: 1.02rem;
+  cursor: pointer;
+  position: relative;
+  color: #333; 
+}
+
+
+.calendar__date::before {
+  content: "";
+  position: absolute;
+  background-color: rgba(200, 200, 200, 0.2); 
+  width: 60%;
+  height: 80%;
+  top: 50%;
+  left: 50%;
+  
+  transform: translate(-50%, -50%);
+  border-radius: 50%; 
+  transition: background-color 0.3s ease;
+}
+
+.calendar__date:hover::before {
+  background-color: rgba(0, 0, 0, 0.1); 
+}
+
+
+.calendar__date--selected::before {
+  background-color: #ffeaec;
+  border: 2px solid #ff374b; 
+}
+
+    .calendar__date:not(.calendar__date--selected):not(.calendar__date--grey):hover::before {
+      background-color: #ededed;
+    }
+
+    .calendar__date--grey {
+      color: #c5c8ca;
+      cursor: not-allowed;
+    }
+
+    .calendar__date--selected {
+      color: #ff374b;
+    }
+
+    .calendar__date--first-date::before {
+      border-top-left-radius: var(--accent-br);
+      border-bottom-left-radius: var(--accent-br);
+    }
+
+    .calendar__date--last-date::before {
+      border-top-right-radius: var(--accent-br);
+      border-bottom-right-radius: var(--accent-br);
+    }
+
+    .calendar__date--range-start::after {
+      content: "";
+      position: absolute;
+      bottom: 3px;
+      border-radius: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ff374b;
+      width: 10px;
+      height: 4px;
+    }
+
+    .calendar__date--range-end {
+      color: #fff;
+    }
+
+    .calendar__date--range-end::before {
+      box-shadow: 0 15px 20px -3px rgba(255, 55, 75, 0.35);
+      background-color: #ff374b;
+      border-radius: var(--accent-br);
+      z-index: 1;
+    }
+
+    .calendar__date--range-end::after {
+      content: "";
+      position: absolute;
+      height: calc(var(--height) * 0.9);
+      background-color: #ffeaec;
+      width: 50px;
+      top: 50%;
+      right: 50%;
+      transform: translateY(-50%);
+    }
+
+    .calendar__date span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .calendar__buttons {
+      padding: 10px var(--side-padding) 20px;
+      border-bottom-left-radius: var(--border-radius);
+      border-bottom-right-radius: var(--border-radius);
+    }
+
+    .calendar__button {
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+
+.calendar__button--primary {
+  background-color: #1752ff;
+  color: #fff;
+  transition: box-shadow 0.3s cubic-bezier(0.21, 0.68, 0.09, 0.27), transform 0.2s linear;
+}
+
+.calendar__button--primary:hover {
+  background-color: #1448d9;
+  box-shadow: 0 20px 30px -13px rgba(23, 82, 255, 0.45);
+  transform: translateY(-3px);
+}
+
+
+.calendar__button--secondary {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.calendar__button--secondary:hover {
+  background-color: #218838; 
+  box-shadow: 0 20px 30px -13px rgba(40, 167, 69, 0.45);
+  transform: translateY(-3px);
+}
+
+
+.calendar__button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 10px -6px rgba(0, 0, 0, 0.2);
+}
+
+
+    .event-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      height: 490px;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      display: none;
+      z-index: 100;
+    }
+
+    .event-popup input,
+    .event-popup select {
+      display: block;
+      margin: 10px 0;
+      width: 90%;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid black;
+    }
+
+    .event-popup button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .event-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 99;
+    }
+
+    body {
+      display: flex;
+      background-color: #ffffff;
+      height: 100vh;
+      font-family: "Nunito", sans-serif;
+      font-size: 14px;
+      margin: 3vmin;
+      overflow: hidden;
+      top: 20px;
+      left: 50%;
+    }
+
+    select,
+    button {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 1.02rem;
+      border-radius: 20px;
+      outline: none;
+      border: 0;
+      padding: 15px 20px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    select {
+      background: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Capa_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='960px' height='560px' viewBox='0 0 960 560' enable-background='new 0 0 960 560' xml:space='preserve'%3E%3Cg id='Rounded_Rectangle_33_copy_4_1_'%3E%3Cpath d='M480,344.181L268.869,131.889c-15.756-15.859-41.3-15.859-57.054,0c-15.754,15.857-15.754,41.57,0,57.431l237.632,238.937 c8.395,8.451,19.562,12.254,30.553,11.698c10.993,0.556,22.159-3.247,30.555-11.698l237.631-238.937 c15.756-15.86,15.756-41.571,0-57.431s-41.299-15.859-57.051,0L480,344.181z'/%3E%3C/g%3E%3C/svg%3E") no-repeat calc(100% - var(--side-padding)) center;
+      background-size: 24px;
+    }
+
+.calendar__date--today {
+  border-radius: 50%;
+  width: 100%;
+  left: 0%;
+  color: #ff0000; 
+}
+
+
+
+.calendar__date--event {
+  position: relative;
+  border-radius: 50%;
+  width: 50px;
+  left: 5px;
+}
+
+
+.calendar__date--event::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #ff374b;
+  border-radius: 50%;
+  top: 5px;
+  right: 5px;
+}
+#event-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.time-select {
+  width: 60px;
+  padding: 5px;
+  font-size: 1rem;
+  border-radius: 5px;
+}
+
+
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const monthSelect = document.getElementById("calendar__month");
+        const yearSelect = document.getElementById("calendar__year");
+        const datesContainer = document.querySelector(".calendar__dates");
+        const popupOverlay = document.querySelector(".event-popup-overlay");
+        const popup = document.querySelector(".event-popup");
+        const events = {};  // This will store events fetched from the backend
+    
+        const daySelect = document.getElementById("event-day");
+        const eventMonthSelect = document.getElementById("event-month");
+        const eventYearSelect = document.getElementById("event-year");
+        const todayBtn = document.getElementById("today-btn");
+    
+        // Fetch and populate events from backend
+        function loadEvents() {
+            fetch('/get_events')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(event => {
+                        events[event.date] = {
+                            description: event.description,
+                            color: event.color,
+                            time: event.time
+                        };
+                    });
+                    generateCalendar(currentMonth, currentYear);  // Generate calendar with events
+                })
+                .catch(error => console.error('Error loading events:', error));
+        }
+    
+        function generateDayOptions(month, year) {
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const isCurrentMonth = (month === today.getMonth() && year === today.getFullYear());
+    
+            daySelect.innerHTML = "";
+            for (let i = 1; i <= lastDate; i++) {
+                const option = document.createElement("option");
+                option.value = i;
+                option.textContent = i;
+    
+                if (isCurrentMonth && i < today.getDate()) {
+                    option.disabled = true;
+                }
+    
+                daySelect.appendChild(option);
+            }
+        }
+    
+        function generateCalendar(month, year) {
+            const firstDay = new Date(year, month, 1).getDay() - 1;
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDate = new Date(year, month, 0).getDate();
+            const today = new Date();
+    
+            datesContainer.innerHTML = "";
+    
+            // Days from previous month
+            for (let i = (firstDay < 0 ? 6 : firstDay); i > 0; i--) {
+                const dateElement = document.createElement("div");
+                dateElement.className = "calendar__date calendar__date--grey";
+                dateElement.innerHTML = `<span>${prevMonthLastDate - i + 1}</span>`;
+                datesContainer.appendChild(dateElement);
+            }
+    
+            // Current month days
+            for (let i = 1; i <= lastDate; i++) {
+                const dateElement = document.createElement("div");
+                dateElement.className = "calendar__date";
+                const eventKey = `${year}-${month + 1}-${i}`;
+    
+                if (events[eventKey]) {
+                    dateElement.classList.add("calendar__date--event");
+                    dateElement.style.backgroundColor = events[eventKey].color;
+                    dateElement.style.color = "#fff";
+                }
+    
+                if (
+                    year === today.getFullYear() &&
+                    month === today.getMonth() &&
+                    i === today.getDate()
+                ) {
+                    dateElement.classList.add("calendar__date--today");
+                }
+    
+                dateElement.innerHTML = `<span>${i}</span>`;
+                dateElement.addEventListener("click", function() {
+                    if (events[eventKey]) {
+                        let eventInfo = `Event on ${month + 1}/${i}/${year}: ${events[eventKey].description}`;
+                        if (events[eventKey].time) {
+                            eventInfo += ` at ${events[eventKey].time}`;
+                        }
+                        alert(eventInfo);
+                    } else {
+                        alert(`No events on ${month + 1}/${i}/${year}`);
+                    }
+                });
+    
+                datesContainer.appendChild(dateElement);
+            }
+    
+            // Days from next month
+            const remainingDays = 42 - datesContainer.children.length;
+            for (let i = 1; i <= remainingDays; i++) {
+                const dateElement = document.createElement("div");
+                dateElement.className = "calendar__date calendar__date--grey";
+                dateElement.innerHTML = `<span>${i}</span>`;
+                datesContainer.appendChild(dateElement);
+            }
+        }
+    
+        monthSelect.addEventListener("change", function() {
+            const month = monthSelect.selectedIndex;
+            const year = parseInt(yearSelect.value);
+            generateCalendar(month, year);
+            generateDayOptions(month, year);
+        });
+    
+        yearSelect.addEventListener("change", function() {
+            const month = monthSelect.selectedIndex;
+            const year = parseInt(yearSelect.value);
+            generateCalendar(month, year);
+            generateDayOptions(month, year);
+        });
+    
+        document.getElementById("add-event-btn").addEventListener("click", function() {
+            const month = monthSelect.selectedIndex;
+            const year = parseInt(yearSelect.value);
+            popup.style.display = "block";
+            popupOverlay.style.display = "block";
+            eventMonthSelect.selectedIndex = month;
+            eventYearSelect.value = year;
+            generateDayOptions(month, year);
+        });
+    
+        document.getElementById("save-event-btn").addEventListener("click", function() {
+            const month = parseInt(eventMonthSelect.value) - 1;
+            const year = parseInt(eventYearSelect.value);
+            const day = parseInt(daySelect.value);
+            const eventDescription = document.getElementById("event-description").value;
+            const eventColor = document.getElementById("event-color").value;
+            const hour = parseInt(document.getElementById("event-hour").value);
+            const minute = parseInt(document.getElementById("event-minute").value);
+            const today = new Date();
+    
+            const selectedDate = new Date(year, month, day, hour, minute);
+    
+            if (selectedDate < today) {
+                alert("You cannot select a past date or time.");
+                return;
+            }
+    
+            if (day && eventDescription) {
+                const eventKey = `${year}-${month + 1}-${day}`;
+                const eventTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    
+                events[eventKey] = {
+                    description: eventDescription,
+                    color: eventColor,
+                    time: eventTime
+                };
+    
+                // Send to backend
+                fetch('/create_event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date: eventKey,
+                        description: eventDescription,
+                        time: eventTime,
+                        color: eventColor
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    window.parent.location.reload();
+                })
+                .catch(error => console.error('Error:', error));
+    
+                monthSelect.selectedIndex = month;
+                yearSelect.value = year;
+                generateCalendar(month, year);
+    
+                popup.style.display = "none";
+                popupOverlay.style.display = "none";
+            }
+        });
+    
+        document.getElementById("cancel-event-btn").addEventListener("click", function() {
+            popup.style.display = "none";
+            popupOverlay.style.display = "none";
+        });
+    
+        todayBtn.addEventListener("click", function() {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            monthSelect.selectedIndex = currentMonth;
+            yearSelect.value = currentYear;
+            generateCalendar(currentMonth, currentYear);
+            generateDayOptions(currentMonth, currentYear);
+        });
+    
+        // Initialize calendar
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        monthSelect.selectedIndex = currentMonth;
+        yearSelect.value = currentYear;
+        loadEvents();  // Load events from backend
+        generateDayOptions(currentMonth, currentYear);
+    });
+    </script>
+    
+    
+</head>
+<body>
+  <div class="calendar">
+    <div class="calendar__opts">
+      <select name="calendar__month" id="calendar__month">
+        <option value="1">Jan</option>
+        <option value="2">Feb</option>
+        <option value="3">Mar</option>
+        <option value="4">Apr</option>
+        <option value="5">May</option>
+        <option value="6">Jun</option>
+        <option value="7">Jul</option>
+        <option value="8">Aug</option>
+        <option value="9">Sep</option>
+        <option value="10">Oct</option>
+        <option value="11">Nov</option>
+        <option value="12">Dec</option>
+      </select>
+      <select name="calendar__year" id="calendar__year">
+        <option>2017</option>
+        <option>2018</option>
+        <option>2019</option>
+        <option>2020</option>
+        <option>2021</option>
+        <option>2022</option>
+        <option>2023</option>
+        <option>2024</option>
+        <option>2025</option>
+      </select>
+    </div>
+
+    <div class="calendar__body">
+      <div class="calendar__days">
+        <div>M</div>
+        <div>T</div>
+        <div>W</div>
+        <div>T</div>
+        <div>F</div>
+        <div>S</div>
+        <div>S</div>
+      </div>
+      <div class="calendar__dates"></div>
+    </div>
+
+    <div class="calendar__buttons">
+        <button class="calendar__button calendar__button--primary" id="add-event-btn">Add Event</button>
+        <button class="calendar__button calendar__button--secondary" id="today-btn">Today</button>
+      </div>
+      
+  </div>
+
+  <div class="event-popup-overlay"></div>
+  <div class="event-popup">
+    <label for="event-month">Month:</label>
+    <select id="event-month">
+      <option value="1">Jan</option>
+      <option value="2">Feb</option>
+      <option value="3">Mar</option>
+      <option value="4">Apr</option>
+      <option value="5">May</option>
+      <option value="6">Jun</option>
+      <option value="7">Jul</option>
+      <option value="8">Aug</option>
+      <option value="9">Sep</option>
+      <option value="10">Oct</option>
+      <option value="11">Nov</option>
+      <option value="12">Dec</option>
+    </select>
+
+    <label for="event-day">Day:</label>
+    <select id="event-day"></select>
+
+    <label for="event-year">Year:</label>
+    <select id="event-year">
+      <option>2017</option>
+      <option>2018</option>
+      <option>2019</option>
+      <option>2020</option>
+      <option>2021</option>
+      <option>2022</option>
+      <option>2023</option>
+      <option>2024</option>
+      <option>2025</option>
+    </select>
+    <label for="event-time">Time:</label>
+<div id="event-time">
+  <select id="event-hour" class="time-select">
+    
+    <option value="0">00</option>
+    <option value="1">01</option>
+    <option value="2">02</option>
+    <option value="3">03</option>
+    <option value="4">04</option>
+    <option value="5">05</option>
+    <option value="6">06</option>
+    <option value="7">07</option>
+    <option value="8">08</option>
+    <option value="9">09</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+    <option value="13">13</option>
+    <option value="14">14</option>
+    <option value="15">15</option>
+    <option value="16">16</option>
+    <option value="17">17</option>
+    <option value="18">18</option>
+    <option value="19">19</option>
+    <option value="20">20</option>
+    <option value="21">21</option>
+    <option value="22">22</option>
+    <option value="23">23</option>
+  </select>
+  :
+  <select id="event-minute" class="time-select">
+    
+    <option value="0">00</option>
+    <option value="5">05</option>
+    <option value="10">10</option>
+    <option value="15">15</option>
+    <option value="20">20</option>
+    <option value="25">25</option>
+    <option value="30">30</option>
+    <option value="35">35</option>
+    <option value="40">40</option>
+    <option value="45">45</option>
+    <option value="50">50</option>
+    <option value="55">55</option>
+  </select>
+</div>
+
+
+
+    <label for="event-description">Event name:</label>
+    <input type="text" id="event-description" placeholder="Enter event description">
+
+    <label for="event-color">Event Color:</label>
+    <select id="event-color">
+      <option value="red">Red</option>
+      <option value="blue">Blue</option>
+      <option value="green">Green</option>
+      <option value="yellow">Yellow</option>
+    </select>
+
+    <button id="save-event-btn">Save Event</button>
+    <button id="cancel-event-btn">Cancel</button>
+  </div>
+</body>
+</html>
