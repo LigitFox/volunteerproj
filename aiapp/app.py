@@ -4,10 +4,14 @@ from datetime import datetime
 import csv
 import io
 import queue
+from flask_wtf import CSRFProtect
+from flask_sqlalchemy import SQLAlchemy
+
+
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  
-
-
+app.secret_key = 'Pranav'  
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///volunteers.db'
+db = SQLAlchemy(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -98,44 +102,112 @@ def send_event_email(email, date, description, time):
     )
     msg.body = f"A new event has been scheduled on {date} at {time}.\n\nEvent: {description}"
     mail.send(msg)
+def send_cancellation_email(email, event_description, event_date, event_time):
+    msg = Message(
+        "Event Cancellation Notice",
+        sender="your-email@example.com",
+        recipients=[email]
+    )
+    msg.body = f"The event '{event_description}' scheduled on {event_date} at {event_time} has been canceled."
+    mail.send(msg)
+
 @app.route('/delete_event/<int:event_id>', methods=['DELETE'])
 def delete_event(event_id):
     global events
     event = next((e for e in events if e['id'] == event_id), None)
     if event:
         events = [e for e in events if e['id'] != event_id]
+        
+        # Notify volunteers of the cancellation
+        for volunteer in volunteers:
+            send_cancellation_email(volunteer['contact_email'], event['description'], event['date'], event['time'])
+        
         return jsonify({'status': 'success'})
     else:
         return jsonify({'status': 'error', 'message': 'Event not found'}), 404
 
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        
-        skills = request.form.getlist('skills[]')
+        # Get form data
+        full_name = request.form['full_name']
+        contact_phone = request.form['contact_phone']
+        contact_email = request.form['contact_email']
+        address = request.form['address']
+        emergency_contact_name = request.form['emergency_contact_name']
+        emergency_contact_phone = request.form['emergency_contact_phone']
+        emergency_contact_relationship = request.form['emergency_contact_relationship']
+        date_of_birth = request.form['date_of_birth']
+        preferred_teams = request.form.getlist('preferred_teams')
+        additional_comments = request.form['additional_comments']
 
+        # Get and process the skills
+        raw_skills = request.form.getlist('skills[]')
+        processed_skills = [skill.strip() for skill in raw_skills if skill.strip()]
+
+        # Check for existing information
+        existing_fields = []
+
+        for v in volunteers:
+            if full_name == v.get('full_name'):
+                existing_fields.append('Full Name')
+            if contact_phone and contact_phone == v.get('contact_phone'):
+                existing_fields.append('Contact Phone')
+            if contact_email and contact_email == v.get('contact_email'):
+                existing_fields.append('Contact Email')
+            if address and address == v.get('address'):
+                existing_fields.append('Address')
+            if emergency_contact_name and emergency_contact_name == v.get('emergency_contact_name'):
+                existing_fields.append('Emergency Contact Name')
+            if emergency_contact_phone and emergency_contact_phone == v.get('emergency_contact_phone'):
+                existing_fields.append('Emergency Contact Phone')
+
+        if existing_fields:
+            # Map field labels to input names
+            field_name_mapping = {
+                'Full Name': 'full_name',
+                'Contact Phone': 'contact_phone',
+                'Contact Email': 'contact_email',
+                'Address': 'address',
+                'Emergency Contact Name': 'emergency_contact_name',
+                'Emergency Contact Phone': 'emergency_contact_phone',
+                'Emergency Contact Relationship': 'emergency_contact_relationship',
+                'Date of Birth': 'date_of_birth'
+            }
+            duplicate_fields = [field_name_mapping[field] for field in set(existing_fields)]
+            # Generate a warning message
+            message = 'The following information already exists in the database: ' + ', '.join(set(existing_fields))
+            flash(message, 'warning')
+            # Re-render the registration form with the existing data
+            # Convert request.form to a dictionary that preserves list values
+            form_data = request.form.to_dict(flat=False)
+            return render_template('register.html', teams=teams, form_data=form_data, duplicate_fields=duplicate_fields)
         
+        # Create the volunteer entry
         volunteer = {
             'id': len(volunteers) + 1,
-            'full_name': request.form['full_name'],
-            'contact_phone': request.form['contact_phone'],
-            'contact_email': request.form['contact_email'],
-            'address': request.form['address'],
-            'emergency_contact_name': request.form['emergency_contact_name'],
-            'emergency_contact_phone': request.form['emergency_contact_phone'],
-            'emergency_contact_relationship': request.form['emergency_contact_relationship'],
-            'date_of_birth': request.form['date_of_birth'],
-            'preferred_teams': request.form.getlist('preferred_teams'),
-            'skills': skills,
-            'additional_comments': request.form['additional_comments'],
+            'full_name': full_name,
+            'contact_phone': contact_phone,
+            'contact_email': contact_email,
+            'address': address,
+            'emergency_contact_name': emergency_contact_name,
+            'emergency_contact_phone': emergency_contact_phone,
+            'emergency_contact_relationship': emergency_contact_relationship,
+            'date_of_birth': date_of_birth,
+            'preferred_teams': preferred_teams,
+            'skills': processed_skills,
+            'additional_comments': additional_comments,
             'assigned_teams': [],
             'hours': [],
-            'attendance': []
+            'attendance': {}
         }
         volunteers.append(volunteer)
+        flash('Volunteer registered successfully!', 'success')
         return redirect(url_for('index'))
-    return render_template('register.html', teams=teams)
+    return render_template('register.html', teams=teams, form_data={}, duplicate_fields=[])
+
 
 
 
@@ -230,34 +302,67 @@ def update_hours(volunteer_id, date):
 def track_attendance():
     if request.method == 'POST':
         session_date = request.form['date']
-        selected_volunteer_ids = request.form.getlist('volunteer_ids')
-        
-        if not selected_volunteer_ids:
+        selected_volunteer_ids = request.form.getlist('volunteer_ids')  # Present volunteers
+        absent_volunteer_ids = request.form.getlist('absent_volunteer_ids')  # Absent volunteers
+
+        if not selected_volunteer_ids and not absent_volunteer_ids:
             flash('No volunteers selected for attendance.', 'warning')
             return redirect(url_for('track_attendance'))
-        
+
         for volunteer in volunteers:
-            if str(volunteer['id']) in selected_volunteer_ids:
-                
+            volunteer_id_str = str(volunteer['id'])
+            if volunteer_id_str in selected_volunteer_ids:
+                # Mark as present
                 if session_date in volunteer['attendance']:
                     flash(f"Attendance for {volunteer['full_name']} on {session_date} has already been recorded.", 'danger')
                 else:
-                    volunteer['attendance'].append(session_date)
-        
+                    volunteer['attendance'][session_date] = 'present'
+            elif volunteer_id_str in absent_volunteer_ids:
+                # Mark as absent
+                if session_date in volunteer['attendance']:
+                    flash(f"Attendance for {volunteer['full_name']} on {session_date} has already been recorded.", 'danger')
+                else:
+                    volunteer['attendance'][session_date] = 'absent'
+            else:
+                # Neither present nor absent selected for this volunteer
+                pass
+
+        flash('Attendance recorded successfully!', 'success')
         return redirect(url_for('index'))
-    
+
+    # Initialize attendance dictionary if not present
+    for volunteer in volunteers:
+        if 'attendance' not in volunteer:
+            volunteer['attendance'] = {}
+
     return render_template('attendance.html', volunteers=volunteers)
+
+
+
+@app.route('/update_attendance_status/<int:volunteer_id>', methods=['POST'])
+def update_attendance_status(volunteer_id):
+    volunteer = next((v for v in volunteers if v['id'] == volunteer_id), None)
+    if volunteer:
+        data = request.get_json()
+        date = data.get('date')
+        new_status = data.get('status')
+        if date in volunteer['attendance']:
+            volunteer['attendance'][date] = new_status
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Attendance record not found'}), 404
+    else:
+        return jsonify({'status': 'error', 'message': 'Volunteer not found'}), 404
 
 
 @app.route('/remove_attendance/<int:volunteer_id>/<string:date>', methods=['POST'])
 def remove_attendance(volunteer_id, date):
     volunteer = next((v for v in volunteers if v['id'] == volunteer_id), None)
     if volunteer and date in volunteer['attendance']:
-        volunteer['attendance'].remove(date)
-        flash('Attendance date removed successfully!', 'success')
-    else:
-        flash('Attendance date not found.', 'danger')
+        del volunteer['attendance'][date]
+        flash('Attendance record removed successfully!', 'success')
     return redirect(url_for('volunteer_detail', volunteer_id=volunteer_id))
+
 
 @app.route('/reports')
 def reports():
@@ -274,7 +379,7 @@ def reports():
     
     for v in volunteers:
         total_hours = sum(float(entry['hours']) for entry in v['hours'])
-        attendance_dates = ", ".join(v['attendance'])  
+        attendance_dates = "; ".join([f"{date} ({status})" for date, status in v['attendance'].items()])
         preferred_teams = ", ".join(v['preferred_teams'])  
         assigned_teams = ", ".join(v['assigned_teams'])  
         skills = ", ".join(v['skills'])  

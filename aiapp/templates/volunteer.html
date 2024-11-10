@@ -24,11 +24,11 @@
         }
     
         .btn-mark-absent {
-            background-color: #eca841; 
+            background-color: #dc3545; 
             color: white;
         }
         .btn-mark-absent:hover {
-            background-color: #f1c80f; 
+            background-color: #c82333; 
             color: white;
         }
     </style>
@@ -61,7 +61,7 @@
                 <p><strong>Address:</strong> {{ volunteer.address }}</p>
                 <p><strong>Date of Birth:</strong> {{ volunteer.date_of_birth }}</p>
                 <p><strong>Preferred Teams:</strong> {{ ', '.join(volunteer.preferred_teams) }}</p>
-                <p><strong>Skills:</strong> {{ volunteer.skills }}</p>
+                <p><strong>Skills:</strong> {{ ', '.join(volunteer.skills) }}</p>
                 <p><strong>Additional Comments:</strong> {{ volunteer.additional_comments }}</p>
             </div>
         </div>
@@ -69,10 +69,13 @@
         <h2>Assign to Teams</h2>
         <form method="post">
             <div class="form-group">
+                {% set checked_teams = volunteer.assigned_teams or [] %}
                 {% for team in teams %}
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="assigned_teams" id="assigned_team{{ loop.index }}" value="{{ team }}" {% if team in volunteer.preferred_teams or team in volunteer.assigned_teams %}checked{% endif %}>
-                        <label class="form-check-label" for="assigned_team{{ loop.index }}">{{ team }}</label>
+                        <input class="form-check-input" type="checkbox" name="assigned_teams" id="assigned_team{{ loop.index }}" value="{{ team }}" {% if team in checked_teams %}checked{% endif %}>
+                        <label class="form-check-label" for="assigned_team{{ loop.index }}">
+                            {{ team }} {% if team in volunteer.preferred_teams and team not in volunteer.assigned_teams %}(Preferred){% endif %}
+                        </label>
                     </div>
                 {% endfor %}
             </div>
@@ -83,6 +86,8 @@
             <button type="submit" class="btn btn-primary">Update Teams</button>
             <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Volunteer List</a>
         </form>
+        
+        
     
         <h2 class="mt-4">Logged Hours</h2>
         <table class="table table-striped table-bordered">
@@ -119,20 +124,32 @@
     
         <h2 class="mt-4">Attendance</h2>
         <ul class="list-group">
-            {% for date in volunteer.attendance %}
+            {% for date, status in volunteer.attendance.items() %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     {{ date }}
-                    <span class="badge badge-success" id="badge-{{ date }}">Present</span>
+                    {% if status == 'present' %}
+                        <span class="badge badge-success" id="badge-{{ date }}">Present</span>
+                    {% elif status == 'absent' %}
+                        <span class="badge badge-danger" id="badge-{{ date }}">Absent</span>
+                    {% else %}
+                        <span class="badge badge-secondary" id="badge-{{ date }}">{{ status.capitalize() }}</span>
+                    {% endif %}
                     <div>
                         <button class="btn btn-sm btn-primary" onclick="toggleAttendanceForm('{{ date }}')">Edit</button>
                         <form action="{{ url_for('remove_attendance', volunteer_id=volunteer.id, date=date) }}" method="post" style="display:inline;">
                             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this attendance date?');">Remove</button>
                         </form>
                         
-                        <form onsubmit="toggleAttendance(event, '{{ date }}')" method="post" style="display:inline; display: none;" id="attendance-form-{{ date }}">
+                        <form onsubmit="updateAttendanceStatus(event, '{{ date }}')" method="post" style="display:inline; display: none;" id="attendance-form-{{ date }}">
                             <input type="hidden" name="date" value="{{ date }}">
-                            <input type="hidden" id="status-{{ date }}" name="status" value="Absent">
-                            <button type="submit" class="btn btn-sm btn-warning btn-mark-absent" id="toggle-button-{{ date }}">Mark as Absent</button>
+                            <input type="hidden" id="status-{{ date }}" name="status" value="{{ 'absent' if status == 'present' else 'present' }}">
+                            <button type="submit" class="btn btn-sm {% if status == 'present' %}btn-mark-absent{% else %}btn-mark-present{% endif %}" id="toggle-button-{{ date }}">
+                                {% if status == 'present' %}
+                                    Mark as Absent
+                                {% else %}
+                                    Mark as Present
+                                {% endif %}
+                            </button>
                         </form>
                     </div>
                 </li>
@@ -159,52 +176,65 @@
     <script>
         function toggleAttendanceForm(date) {
             const form = document.getElementById('attendance-form-' + date);
-            const badge = document.getElementById('badge-' + date);
-            const toggleButton = document.getElementById('toggle-button-' + date);
-            const statusInput = document.getElementById('status-' + date);
-    
-            if (badge.textContent === 'Present') {
-                toggleButton.textContent = 'Mark as Absent';
-                statusInput.value = 'Absent';
-                toggleButton.classList.remove('btn-mark-present');
-                toggleButton.classList.add('btn-mark-absent');
-            } else {
-                toggleButton.textContent = 'Mark as Present';
-                statusInput.value = 'Present';
-                toggleButton.classList.remove('btn-mark-absent');
-                toggleButton.classList.add('btn-mark-present');
-            }
-    
             form.style.display = form.style.display === 'none' ? 'inline' : 'none';
         }
     
-        function toggleAttendance(event, date) {
+        function updateAttendanceStatus(event, date) {
             event.preventDefault();
     
             const badge = document.getElementById('badge-' + date);
             const form = document.getElementById('attendance-form-' + date);
-            const toggleButton = document.getElementById('toggle-button-' + date);
             const statusInput = document.getElementById('status-' + date);
             const newStatus = statusInput.value;
     
-            badge.textContent = newStatus;
-            if (newStatus === 'Absent') {
-                badge.classList.remove('badge-success');
-                badge.classList.add('badge-danger');
-                toggleButton.textContent = 'Mark as Present';
-                statusInput.value = 'Present';
-                toggleButton.classList.remove('btn-mark-absent');
-                toggleButton.classList.add('btn-mark-present');
-            } else {
-                badge.classList.remove('badge-danger');
-                badge.classList.add('badge-success');
-                toggleButton.textContent = 'Mark as Absent';
-                statusInput.value = 'Absent';
-                toggleButton.classList.remove('btn-mark-present');
-                toggleButton.classList.add('btn-mark-absent');
-            }
-    
-            form.style.display = 'none';
+            // Send AJAX request to update attendance status
+            fetch("{{ url_for('update_attendance_status', volunteer_id=volunteer.id) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: date,
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update the badge text and class
+                    badge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    if (newStatus === 'present') {
+                        badge.classList.remove('badge-danger');
+                        badge.classList.add('badge-success');
+                    } else {
+                        badge.classList.remove('badge-success');
+                        badge.classList.add('badge-danger');
+                    }
+
+                    // Update the form button text and status input value
+                    const toggleButton = document.getElementById('toggle-button-' + date);
+                    if (newStatus === 'present') {
+                        toggleButton.textContent = 'Mark as Absent';
+                        statusInput.value = 'absent';
+                        toggleButton.classList.remove('btn-mark-present');
+                        toggleButton.classList.add('btn-mark-absent');
+                    } else {
+                        toggleButton.textContent = 'Mark as Present';
+                        statusInput.value = 'present';
+                        toggleButton.classList.remove('btn-mark-absent');
+                        toggleButton.classList.add('btn-mark-present');
+                    }
+
+                    // Hide the form
+                    form.style.display = 'none';
+                } else {
+                    alert('Failed to update attendance: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
         }
     
         function toggleHoursForm(date) {
@@ -213,40 +243,38 @@
         }
     
         function updateHours(date) {
-    const form = document.getElementById('hours-form-' + date);
-    const hoursInput = form.querySelector('input[name="hours"]');
-    const notesInput = form.querySelector('input[name="notes"]');
-
-    
-    const formData = new FormData();
-    formData.append('hours', hoursInput.value);
-    formData.append('notes', notesInput.value);
-
-    
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            
-            document.getElementById('hours-' + date).textContent = hoursInput.value;
-            document.getElementById('notes-' + date).textContent = notesInput.value;
-
-            
-            form.style.display = 'none';
-        } else {
-            
-            alert('Failed to update hours: ' + data.message);
+            const form = document.getElementById('hours-form-' + date);
+            const hoursInput = form.querySelector('input[name="hours"]');
+            const notesInput = form.querySelector('input[name="notes"]');
+        
+            const formData = new FormData();
+            formData.append('hours', hoursInput.value);
+            formData.append('notes', notesInput.value);
+        
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    
+                    document.getElementById('hours-' + date).textContent = hoursInput.value;
+                    document.getElementById('notes-' + date).textContent = notesInput.value;
+        
+                    
+                    form.style.display = 'none';
+                } else {
+                    
+                    alert('Failed to update hours: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
-}
-
+    
     </script>
     
 </body>
