@@ -31,6 +31,18 @@
             background-color: #c82333; 
             color: white;
         }
+
+        .edit-btn {
+            margin-left: 10px;
+        }
+
+        .save-btn {
+            margin-left: 10px;
+        }
+
+        .cancel-btn {
+            margin-left: 5px;
+        }
     </style>
     
     <div class="container mt-4">
@@ -54,15 +66,113 @@
                 {{ volunteer.full_name }}
             </div>
             <div class="card-body">
-                <p><strong>Phone number:</strong> {{ volunteer.contact_phone}}</p>
-                <p><strong>Email:</strong> {{ volunteer.contact_email}}</p>
-                <p><strong>Emergency contact name:</strong> {{ volunteer.emergency_contact_name }}</p>
-                <p><strong>Emergency contact phone:</strong> {{ volunteer.emergency_contact_phone }}</p>
-                <p><strong>Address:</strong> {{ volunteer.address }}</p>
-                <p><strong>Date of Birth:</strong> {{ volunteer.date_of_birth }}</p>
-                <p><strong>Preferred Teams:</strong> {{ ', '.join(volunteer.preferred_teams) }}</p>
-                <p><strong>Skills:</strong> {{ ', '.join(volunteer.skills) }}</p>
-                <p><strong>Additional Comments:</strong> {{ volunteer.additional_comments }}</p>
+                <!-- Phone Number -->
+                <p>
+                    <strong>Phone number:</strong>
+                    <span id="contact_phone_display">{{ volunteer.contact_phone }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('contact_phone')">Edit</button>
+                </p>
+                <div id="contact_phone_edit" style="display: none;">
+                    <input type="text" id="contact_phone_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.contact_phone }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('contact_phone')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('contact_phone')">Cancel</button>
+                </div>
+
+                <!-- Email -->
+                <p>
+                    <strong>Email:</strong>
+                    <span id="contact_email_display">{{ volunteer.contact_email }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('contact_email')">Edit</button>
+                </p>
+                <div id="contact_email_edit" style="display: none;">
+                    <input type="email" id="contact_email_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.contact_email }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('contact_email')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('contact_email')">Cancel</button>
+                </div>
+
+                <!-- Emergency Contact Name -->
+                <p>
+                    <strong>Emergency contact name:</strong>
+                    <span id="emergency_contact_name_display">{{ volunteer.emergency_contact_name }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('emergency_contact_name')">Edit</button>
+                </p>
+                <div id="emergency_contact_name_edit" style="display: none;">
+                    <input type="text" id="emergency_contact_name_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.emergency_contact_name }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('emergency_contact_name')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('emergency_contact_name')">Cancel</button>
+                </div>
+
+                <!-- Emergency Contact Phone -->
+                <p>
+                    <strong>Emergency contact phone:</strong>
+                    <span id="emergency_contact_phone_display">{{ volunteer.emergency_contact_phone }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('emergency_contact_phone')">Edit</button>
+                </p>
+                <div id="emergency_contact_phone_edit" style="display: none;">
+                    <input type="text" id="emergency_contact_phone_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.emergency_contact_phone }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('emergency_contact_phone')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('emergency_contact_phone')">Cancel</button>
+                </div>
+
+                <!-- Address -->
+                <p>
+                    <strong>Address:</strong>
+                    <span id="address_display">{{ volunteer.address }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('address')">Edit</button>
+                </p>
+                <div id="address_edit" style="display: none;">
+                    <input type="text" id="address_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.address }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('address')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('address')">Cancel</button>
+                </div>
+
+                <!-- Date of Birth -->
+                <p>
+                    <strong>Date of Birth:</strong>
+                    <span id="date_of_birth_display">{{ volunteer.date_of_birth }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('date_of_birth')">Edit</button>
+                </p>
+                <div id="date_of_birth_edit" style="display: none;">
+                    <input type="date" id="date_of_birth_input" class="form-control form-control-sm d-inline w-50" value="{{ volunteer.date_of_birth }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('date_of_birth')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('date_of_birth')">Cancel</button>
+                </div>
+
+                <!-- Preferred Teams -->
+                <p>
+                    <strong>Preferred Teams:</strong>
+                    <span id="preferred_teams_display">{{ ', '.join(volunteer.preferred_teams) }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('preferred_teams')">Edit</button>
+                </p>
+                <div id="preferred_teams_edit" style="display: none;">
+                    <input type="text" id="preferred_teams_input" class="form-control form-control-sm d-inline w-50" value="{{ ', '.join(volunteer.preferred_teams) }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('preferred_teams')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('preferred_teams')">Cancel</button>
+                </div>
+
+                <!-- Skills -->
+                <p>
+                    <strong>Skills:</strong>
+                    <span id="skills_display">{{ ', '.join(volunteer.skills) }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('skills')">Edit</button>
+                </p>
+                <div id="skills_edit" style="display: none;">
+                    <input type="text" id="skills_input" class="form-control form-control-sm d-inline w-50" value="{{ ', '.join(volunteer.skills) }}">
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('skills')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('skills')">Cancel</button>
+                </div>
+
+                <!-- Additional Comments -->
+                <p>
+                    <strong>Additional Comments:</strong>
+                    <span id="additional_comments_display">{{ volunteer.additional_comments }}</span>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" onclick="enableEdit('additional_comments')">Edit</button>
+                </p>
+                <div id="additional_comments_edit" style="display: none;">
+                    <textarea id="additional_comments_input" class="form-control form-control-sm d-inline w-50" rows="2">{{ volunteer.additional_comments }}</textarea>
+                    <button class="btn btn-sm btn-success save-btn" onclick="saveDetail('additional_comments')">Save</button>
+                    <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('additional_comments')">Cancel</button>
+                </div>
             </div>
         </div>
     
@@ -87,7 +197,7 @@
             <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Volunteer List</a>
         </form>
         
-        
+    
     
         <h2 class="mt-4">Logged Hours</h2>
         <table class="table table-striped table-bordered">
@@ -111,7 +221,7 @@
                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this hours entry?');">Remove</button>
                             </form>
                             
-                            <form id="hours-form-{{ entry.date }}" action="{{ url_for('update_hours', volunteer_id=volunteer.id, date=entry.date) }}" method="post" style="display:none;">
+                            <form id="hours-form-{{ entry.date }}" action="{{ url_for('track_hours', volunteer_id=volunteer.id, date=entry.date) }}" method="post" style="display:none;">
                                 <input type="number" name="hours" min="0" class="form-control form-control-sm d-inline w-25" placeholder="Hours" required>
                                 <input type="text" name="notes" class="form-control form-control-sm d-inline w-50" placeholder="Notes" required>
                                 <button type="button" class="btn btn-sm btn-success" onclick="updateHours('{{ entry.date }}')">Save</button>
@@ -174,6 +284,8 @@
 
     
     <script>
+    
+    
         function toggleAttendanceForm(date) {
             const form = document.getElementById('attendance-form-' + date);
             form.style.display = form.style.display === 'none' ? 'inline' : 'none';
@@ -187,7 +299,7 @@
             const statusInput = document.getElementById('status-' + date);
             const newStatus = statusInput.value;
     
-            // Send AJAX request to update attendance status
+            
             fetch("{{ url_for('update_attendance_status', volunteer_id=volunteer.id) }}", {
                 method: 'POST',
                 headers: {
@@ -201,7 +313,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // Update the badge text and class
+                   
                     badge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
                     if (newStatus === 'present') {
                         badge.classList.remove('badge-danger');
@@ -210,8 +322,8 @@
                         badge.classList.remove('badge-success');
                         badge.classList.add('badge-danger');
                     }
-
-                    // Update the form button text and status input value
+    
+                  
                     const toggleButton = document.getElementById('toggle-button-' + date);
                     if (newStatus === 'present') {
                         toggleButton.textContent = 'Mark as Absent';
@@ -224,8 +336,8 @@
                         toggleButton.classList.remove('btn-mark-absent');
                         toggleButton.classList.add('btn-mark-present');
                     }
-
-                    // Hide the form
+    
+                    
                     form.style.display = 'none';
                 } else {
                     alert('Failed to update attendance: ' + data.message);
@@ -233,7 +345,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('please fill out all fields.');
             });
         }
     
@@ -261,11 +373,10 @@
                     
                     document.getElementById('hours-' + date).textContent = hoursInput.value;
                     document.getElementById('notes-' + date).textContent = notesInput.value;
-        
+    
                     
                     form.style.display = 'none';
                 } else {
-                    
                     alert('Failed to update hours: ' + data.message);
                 }
             })
@@ -275,7 +386,106 @@
             });
         }
     
+    
+        function enableEdit(field) {
+        
+            document.getElementById(field + '_display').style.display = 'none';
+            document.querySelector(`[onclick="enableEdit('${field}')"]`).style.display = 'none';
+    
+            
+            document.getElementById(field + '_edit').style.display = 'block';
+        }
+    
+        function cancelEdit(field) {
+            
+            document.getElementById(field + '_edit').style.display = 'none';
+    
+           
+            document.getElementById(field + '_display').style.display = 'inline';
+            document.querySelector(`[onclick="enableEdit('${field}')"]`).style.display = 'inline';
+        }
+    
+        function saveDetail(field) {
+            let inputElement;
+            let newValue;
+    
+            
+            switch(field) {
+                case 'contact_phone':
+                case 'emergency_contact_phone':
+                    inputElement = document.getElementById(field + '_input');
+                    newValue = inputElement.value.trim();
+                    break;
+                case 'contact_email':
+                    inputElement = document.getElementById(field + '_input');
+                    newValue = inputElement.value.trim();
+                    break;
+                case 'emergency_contact_name':
+                case 'address':
+                case 'preferred_teams':
+                case 'skills':
+                    inputElement = document.getElementById(field + '_input');
+                    newValue = inputElement.value.trim();
+                    break;
+                case 'date_of_birth':
+                    inputElement = document.getElementById(field + '_input');
+                    newValue = inputElement.value;
+                    break;
+                case 'additional_comments':
+                    inputElement = document.getElementById(field + '_input');
+                    newValue = inputElement.value.trim();
+                    break;
+                default:
+                    alert('Unknown field: ' + field);
+                    return;
+            }
+    
+            
+            if (!newValue) {
+                alert('Please enter a valid value.');
+                return;
+            }
+    
+            
+            const data = {
+                volunteer_id: "{{ volunteer.id }}",
+                field: field,
+                value: newValue
+            };
+    
+            
+            fetch("{{ url_for('update_volunteer_detail') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    
+                    if (field === 'preferred_teams' || field === 'skills') {
+                        document.getElementById(field + '_display').textContent = newValue;
+                    } else if (field === 'additional_comments') {
+                        document.getElementById(field + '_display').textContent = newValue;
+                    } else {
+                        document.getElementById(field + '_display').textContent = newValue;
+                    }
+    
+                    
+                    cancelEdit(field);
+                } else {
+                    alert('Failed to update ' + field.replace('_', ' ') + ': ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating. Please try again.');
+            });
+        }
     </script>
+    
     
 </body>
 </html>

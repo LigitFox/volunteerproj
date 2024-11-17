@@ -330,14 +330,13 @@
         const datesContainer = document.querySelector(".calendar__dates");
         const popupOverlay = document.querySelector(".event-popup-overlay");
         const popup = document.querySelector(".event-popup");
-        const events = {};  // This will store events fetched from the backend
-    
+        const events = {};
         const daySelect = document.getElementById("event-day");
         const eventMonthSelect = document.getElementById("event-month");
         const eventYearSelect = document.getElementById("event-year");
         const todayBtn = document.getElementById("today-btn");
     
-        // Fetch and populate events from backend
+
         function loadEvents() {
             fetch('/get_events')
                 .then(response => response.json())
@@ -349,7 +348,7 @@
                             time: event.time
                         };
                     });
-                    generateCalendar(currentMonth, currentYear);  // Generate calendar with events
+                    generateCalendar(currentMonth, currentYear);
                 })
                 .catch(error => console.error('Error loading events:', error));
         }
@@ -381,7 +380,7 @@
     
             datesContainer.innerHTML = "";
     
-            // Days from previous month
+            
             for (let i = (firstDay < 0 ? 6 : firstDay); i > 0; i--) {
                 const dateElement = document.createElement("div");
                 dateElement.className = "calendar__date calendar__date--grey";
@@ -389,7 +388,7 @@
                 datesContainer.appendChild(dateElement);
             }
     
-            // Current month days
+          
             for (let i = 1; i <= lastDate; i++) {
                 const dateElement = document.createElement("div");
                 dateElement.className = "calendar__date";
@@ -425,7 +424,7 @@
                 datesContainer.appendChild(dateElement);
             }
     
-            // Days from next month
+           
             const remainingDays = 42 - datesContainer.children.length;
             for (let i = 1; i <= remainingDays; i++) {
                 const dateElement = document.createElement("div");
@@ -486,7 +485,7 @@
                     time: eventTime
                 };
     
-                // Send to backend
+                
                 fetch('/create_event', {
                     method: 'POST',
                     headers: {
@@ -529,12 +528,12 @@
             generateDayOptions(currentMonth, currentYear);
         });
     
-        // Initialize calendar
+
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         monthSelect.selectedIndex = currentMonth;
         yearSelect.value = currentYear;
-        loadEvents();  // Load events from backend
+        loadEvents();  
         generateDayOptions(currentMonth, currentYear);
     });
     </script>

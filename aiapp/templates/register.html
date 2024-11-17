@@ -2,20 +2,26 @@
 <html>
 <head>
     <title>Register Volunteer</title>
-    <!-- Include Bootstrap CSS -->
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
+    
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="{{ url_for('index') }}">Volunteer Management Tool</a>
+        <div class="ml-auto">
+           
+            <input type="file" name="volunteer_file" accept=".csv" id="fileInput" style="display: none;">
+            <button class="btn btn-outline-light" onclick="document.getElementById('fileInput').click();">Upload Volunteer Data</button>
+            <span id="uploadStatus" class="text-light ml-2"></span>
+        </div>
     </nav>
 
-    <!-- Main Container -->
+    
     <div class="container mt-4">
         <h1>Register Volunteer</h1>
 
-        <!-- Flash Messages -->
+       
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
@@ -29,313 +35,360 @@
           {% endif %}
         {% endwith %}
 
-        <!-- Registration Form -->
+        
         <form method="post" id="registrationForm">
-            <!-- Full Name -->
+            
             <div class="form-group">
                 <label for="full_name">Full Name *</label>
-                <input type="text" class="form-control {% if 'full_name' in duplicate_fields %}is-invalid{% endif %}" name="full_name" id="full_name" required value="{{ form_data.get('full_name', [''])[0] }}">
+                <input type="text" class="form-control {% if 'full_name' in duplicate_fields %}is-invalid{% endif %}" name="full_name" id="full_name" required value="{{ form_data.full_name if form_data else '' }}">
                 {% if 'full_name' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        A volunteer with this full name already exists.
-                    </div>
+                    <div class="invalid-feedback">A volunteer with this full name already exists.</div>
                 {% endif %}
             </div>
 
-            <!-- Date of Birth -->
+        
             <div class="form-group">
                 <label for="date_of_birth">Date of Birth *</label>
-                <input type="date" class="form-control {% if 'date_of_birth' in duplicate_fields %}is-invalid{% endif %}" name="date_of_birth" id="date_of_birth" required value="{{ form_data.get('date_of_birth', [''])[0] }}">
-                {% if 'date_of_birth' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        This date of birth already exists.
-                    </div>
-                {% endif %}
+                <input type="date" name="date_of_birth" id="date_of_birth" required value="{{ form_data.date_of_birth if form_data else '' }}">
             </div>
 
-            <!-- Contact Information -->
+            
             <h4>Contact Information</h4>
             <div class="form-group">
                 <label for="contact_phone">Phone Number *</label>
-                <input type="tel" class="form-control {% if 'contact_phone' in duplicate_fields %}is-invalid{% endif %}" name="contact_phone" id="contact_phone" required value="{{ form_data.get('contact_phone', [''])[0] }}">
+                <input type="tel" class="form-control {% if 'contact_phone' in duplicate_fields %}is-invalid{% endif %}" name="contact_phone" id="contact_phone" required value="{{ form_data.contact_phone if form_data else '' }}">
                 {% if 'contact_phone' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        This phone number already exists.
-                    </div>
+                    <div class="invalid-feedback">This phone number already exists.</div>
                 {% endif %}
             </div>
             <div class="form-group">
                 <label for="contact_email">Email Address *</label>
-                <input type="email" class="form-control {% if 'contact_email' in duplicate_fields %}is-invalid{% endif %}" name="contact_email" id="contact_email" required value="{{ form_data.get('contact_email', [''])[0] }}">
+                <input type="email" class="form-control {% if 'contact_email' in duplicate_fields %}is-invalid{% endif %}" name="contact_email" id="contact_email" required value="{{ form_data.contact_email if form_data else '' }}">
                 {% if 'contact_email' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        This email address already exists.
-                    </div>
+                    <div class="invalid-feedback">This email address already exists.</div>
                 {% endif %}
             </div>
             <div class="form-group">
                 <label for="address">Address *</label>
-                <input type="text" class="form-control {% if 'address' in duplicate_fields %}is-invalid{% endif %}" name="address" id="address" required value="{{ form_data.get('address', [''])[0] }}">
+                <input type="text" class="form-control {% if 'address' in duplicate_fields %}is-invalid{% endif %}" name="address" id="address" required value="{{ form_data.address if form_data else '' }}">
                 {% if 'address' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        This address already exists.
-                    </div>
+                    <div class="invalid-feedback">This address already exists.</div>
                 {% endif %}
             </div>
 
-            <!-- Emergency Contact Information -->
+            
             <h4>Emergency Contact Information</h4>
             <div class="form-group">
                 <label for="emergency_contact_name">Emergency Contact Full Name *</label>
-                <input type="text" class="form-control {% if 'emergency_contact_name' in duplicate_fields %}is-invalid{% endif %}" name="emergency_contact_name" id="emergency_contact_name" required value="{{ form_data.get('emergency_contact_name', [''])[0] }}">
+                <input type="text" class="form-control {% if 'emergency_contact_name' in duplicate_fields %}is-invalid{% endif %}" name="emergency_contact_name" id="emergency_contact_name" required value="{{ form_data.emergency_contact_name if form_data else '' }}">
                 {% if 'emergency_contact_name' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        A volunteer already has an emergency contact with this full name.
-                    </div>
+                    <div class="invalid-feedback">A volunteer already has an emergency contact with this full name.</div>
                 {% endif %}
             </div>
             <div class="form-group">
                 <label for="emergency_contact_phone">Emergency Contact Phone Number *</label>
-                <input type="tel" class="form-control {% if 'emergency_contact_phone' in duplicate_fields %}is-invalid{% endif %}" name="emergency_contact_phone" id="emergency_contact_phone" required value="{{ form_data.get('emergency_contact_phone', [''])[0] }}">
+                <input type="tel" class="form-control {% if 'emergency_contact_phone' in duplicate_fields %}is-invalid{% endif %}" name="emergency_contact_phone" id="emergency_contact_phone" required value="{{ form_data.emergency_contact_phone if form_data else '' }}">
                 {% if 'emergency_contact_phone' in duplicate_fields %}
-                    <div class="invalid-feedback">
-                        This emergency contact phone number already exists.
-                    </div>
+                    <div class="invalid-feedback">This emergency contact phone number already exists.</div>
                 {% endif %}
             </div>
             <div class="form-group">
                 <label for="emergency_contact_relationship">Emergency Contact Relationship *</label>
-                <input type="text" class="form-control" name="emergency_contact_relationship" id="emergency_contact_relationship" required value="{{ form_data.get('emergency_contact_relationship', [''])[0] }}">
+                <input type="text" class="form-control" name="emergency_contact_relationship" id="emergency_contact_relationship" required value="{{ form_data.emergency_contact_relationship if form_data else '' }}">
             </div>
 
-            <!-- Preferred Teams -->
+            <
             <div class="form-group">
                 <label>Preferred Teams *</label>
                 <button type="button" class="btn btn-link p-0 ml-2" id="addTeamBtn">Add Team</button><br>
                 <div id="teams_container">
                     {% for team in teams %}
-                        {% set preferred_teams = form_data.get('preferred_teams', []) %}
-                        {% set checked = 'checked' if team in preferred_teams else '' %}
-                        <div class="form-check form-check-inline" data-team="{{ team }}">
-                            <input class="form-check-input" type="checkbox" name="preferred_teams" id="team{{ loop.index }}" value="{{ team }}" {{ checked }}>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="preferred_teams" id="team{{ loop.index }}" value="{{ team }}" {% if form_data and team in form_data.preferred_teams %}checked{% endif %}>
                             <label class="form-check-label" for="team{{ loop.index }}">{{ team }}</label>
-                            <button type="button" class="btn btn-sm btn-outline-danger ml-1 remove-team-btn" data-team="{{ team }}">Remove</button>
                         </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Add Team Modal -->
+            
             <div class="modal fade" id="addTeamModal" tabindex="-1" role="dialog" aria-labelledby="addTeamModalLabel" aria-hidden="true">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <!-- Modal Header -->
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="addTeamModalLabel">Add New Team</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                  <!-- Modal Body -->
-                  <div class="modal-body">
-                      <div class="form-group">
-                          <label for="new_team_name">Team Name</label>
-                          <input type="text" class="form-control" id="new_team_name">
-                      </div>
-                  </div>
-                  <!-- Modal Footer -->
-                  <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                      <button type="button" class="btn btn-primary" id="submitNewTeam">Add Team</button>
-                  </div>
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addTeamModalLabel">Add New Team</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="new_team_name">Team Name</label>
+                                <input type="text" class="form-control" id="new_team_name">
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="submitNewTeam">Add Team</button>
+                        </div>
+                    </div>
                 </div>
-              </div>
             </div>
 
-            <!-- Skills -->
             <div class="form-group">
                 <label>Skills *</label>
                 <div id="skills_container">
-                    {% set skills_list = form_data.get('skills[]', []) %}
-                    {% for skill in skills_list %}
-                        <div class="input-group mb-2 skill-entry">
-                            <input type="text" class="form-control skill-input" name="skills[]" placeholder="Enter a skill" required value="{{ skill }}">
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-danger remove-skill-btn" type="button">Remove</button>
+                    {% if form_data and form_data.skills %}
+                        {% for skill in form_data.skills %}
+                            <div class="input-group mb-2 skill-entry">
+                                <input type="text" class="form-control skill-input" name="skills[]" placeholder="Enter a skill" required value="{{ skill }}">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-danger remove-skill-btn" type="button">Remove</button>
+                                </div>
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% endif %}
                 </div>
                 <button class="btn btn-outline-secondary" type="button" id="add_skill">Add Skill</button>
             </div>
 
-            <!-- Additional Comments -->
+            
             <div class="form-group">
                 <label for="additional_comments">Additional Comments *</label>
-                <textarea class="form-control" name="additional_comments" id="additional_comments" rows="3" required>{{ form_data.get('additional_comments', [''])[0] }}</textarea>
+                <textarea class="form-control" name="additional_comments" id="additional_comments" rows="3" required>{{ form_data.additional_comments if form_data else '' }}</textarea>
             </div>
 
-            <!-- Submit Button -->
+            
             <button type="submit" class="btn btn-primary" id="registerButton">Register Volunteer</button>
             <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 
-    <!-- Include Scripts -->
+   
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
-    $(document).ready(function() {
-        // Set max date for date_of_birth
-        var today = new Date().toISOString().split('T')[0];
-        $('#date_of_birth').attr('max', today);
+        document.getElementById('fileInput').addEventListener('change', async function() {
+    const file = this.files[0];
+    if (file) {
+        
+        const formData = new FormData();
+        formData.append('volunteer_file', file);
 
-        // Add Team Modal functionality
-        $('#addTeamBtn').click(function() {
-            $('#addTeamModal').modal('show');
-        });
+        
+        const status = document.getElementById('uploadStatus');
+        status.textContent = 'Uploading...';
 
-        $('#submitNewTeam').click(function() {
-            var teamName = $('#new_team_name').val().trim();
-            if (teamName) {
-                $.ajax({
-                    url: '{{ url_for("add_team") }}',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ team_name: teamName }),
-                    success: function(response) {
-                        var newTeamHTML = '<div class="form-check form-check-inline" data-team="' + response.team + '">' +
-                            '<input class="form-check-input" type="checkbox" name="preferred_teams" value="' + response.team + '" checked>' +
-                            '<label class="form-check-label">' + response.team + '</label>' +
-                            '<button type="button" class="btn btn-sm btn-outline-danger ml-1 remove-team-btn" data-team="' + response.team + '">Remove</button>' +
-                            '</div>';
-                        $('#teams_container').append(newTeamHTML);
-                        $('#new_team_name').val('');
-                        $('#addTeamModal').modal('hide');
-                        checkFormValidity();
-                    },
-                    error: function(xhr) {
-                        alert('Error adding team: ' + xhr.responseJSON.message);
-                    }
-                });
+        try {
+            
+            const response = await fetch('{{ url_for("upload_volunteer_data") }}', {
+                method: 'POST',
+                body: formData
+            });
+
+           
+            const result = await response.json();
+
+            
+            if (result.status === 'success') {
+                status.textContent = result.message;
+
+                if (!result.data) {
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('index') }}";
+                    }, 2000); 
+                } else {
+                    
+                    const data = result.data;
+
+                    document.getElementById('full_name').value = data.full_name || '';
+                    document.getElementById('date_of_birth').value = data.date_of_birth || '';
+                    document.getElementById('contact_phone').value = data.contact_phone || '';
+                    document.getElementById('contact_email').value = data.contact_email || '';
+                    document.getElementById('address').value = data.address || '';
+                    document.getElementById('emergency_contact_name').value = data.emergency_contact_name || '';
+                    document.getElementById('emergency_contact_phone').value = data.emergency_contact_phone || '';
+                    document.getElementById('emergency_contact_relationship').value = data.emergency_contact_relationship || '';
+                    document.getElementById('additional_comments').value = data.additional_comments || '';
+
+                    const preferredTeams = data.preferred_teams || [];
+                    document.querySelectorAll('input[name="preferred_teams"]').forEach(checkbox => {
+                        checkbox.checked = preferredTeams.includes(checkbox.value);
+                    });
+
+                    const skillsContainer = document.getElementById('skills_container');
+                    skillsContainer.innerHTML = '';
+                    (data.skills || []).forEach(skill => {
+                        const skillEntry = document.createElement('div');
+                        skillEntry.className = 'input-group mb-2 skill-entry';
+                        skillEntry.innerHTML = `
+                            <input type="text" class="form-control skill-input" name="skills[]" placeholder="Enter a skill" required value="${skill}">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-skill-btn" type="button">Remove</button>
+                            </div>
+                        `;
+                        skillsContainer.appendChild(skillEntry);
+                    });
+
+                    checkFormValidity();
+                }
             } else {
-                alert('Please enter a team name.');
+                status.textContent = result.message;
             }
-        });
-
-        // Remove Team functionality
-        $('#teams_container').on('click', '.remove-team-btn', function() {
-            var teamName = $(this).data('team');
-            var teamElement = $(this).closest('.form-check-inline');
-            if (confirm('Are you sure you want to remove the team "' + teamName + '"? This will remove it for all volunteers.')) {
-                $.ajax({
-                    url: '{{ url_for("remove_team") }}',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ team_name: teamName }),
-                    success: function(response) {
-                        teamElement.remove();
-                        checkFormValidity();
-                    },
-                    error: function(xhr) {
-                        alert('Error removing team: ' + xhr.responseJSON.message);
-                    }
-                });
-            }
-        });
-
-        // Skills functionality
-        $('#add_skill').click(function() {
-            var newSkillField = $('<div class="input-group mb-2 skill-entry">' +
-                '<input type="text" class="form-control skill-input" name="skills[]" placeholder="Enter a skill" required>' +
-                '<div class="input-group-append">' +
-                '<button class="btn btn-outline-danger remove-skill-btn" type="button">Remove</button>' +
-                '</div>' +
-                '</div>');
-            $('#skills_container').append(newSkillField);
-            checkFormValidity();
-        });
-
-        $('#skills_container').on('click', '.remove-skill-btn', function() {
-            $(this).closest('.skill-entry').remove();
-            checkFormValidity();
-        });
-
-        // Ensure at least one skill field is present
-        if ($('#skills_container').children().length === 0) {
-            $('#add_skill').click();
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            status.textContent = 'Upload failed. Please try again.';
         }
+    }
+});
 
-        // Form submission validation
-        $('#registrationForm').submit(function() {
-            var skillInputs = $('.skill-input');
-            if (skillInputs.length === 0) {
-                alert('Please add at least one skill.');
-                return false;
-            }
-            var allFilled = true;
-            skillInputs.each(function() {
-                if ($(this).val().trim() === '') {
-                    allFilled = false;
+    
+        $(document).ready(function() {
+            
+            var today = new Date().toISOString().split('T')[0];
+            $('#date_of_birth').attr('max', today);
+    
+            
+            $('#addTeamBtn').click(function() {
+                $('#addTeamModal').modal('show');
+            });
+    
+            $('#submitNewTeam').click(function() {
+                var teamName = $('#new_team_name').val().trim();
+                if (teamName) {
+                    $.ajax({
+                        url: '{{ url_for("add_team") }}',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ team_name: teamName }),
+                        success: function(response) {
+                            var newTeamHTML = '<div class="form-check form-check-inline" data-team="' + response.team + '">' +
+                                '<input class="form-check-input" type="checkbox" name="preferred_teams" value="' + response.team + '" checked>' +
+                                '<label class="form-check-label">' + response.team + '</label>' +
+                                '<button type="button" class="btn btn-sm btn-outline-danger ml-1 remove-team-btn" data-team="' + response.team + '">Remove</button>' +
+                                '</div>';
+                            $('#teams_container').append(newTeamHTML);
+                            $('#new_team_name').val('');
+                            $('#addTeamModal').modal('hide');
+                            checkFormValidity();
+                        },
+                        error: function(xhr) {
+                            alert('Error adding team: ' + xhr.responseJSON.message);
+                        }
+                    });
+                } else {
+                    alert('Please enter a team name.');
                 }
             });
-            if (!allFilled) {
-                alert('Please fill out all skill fields or remove empty ones.');
-                return false;
-            }
-            // Check if at least one preferred team is selected
-            if ($('input[name="preferred_teams"]:checked').length === 0) {
-                alert('Please select at least one preferred team.');
-                return false;
-            }
-        });
-
-        // Disable submit button until form is valid
-        function checkFormValidity() {
-            var isValid = true;
-
-            // Check all required input fields
-            $('#registrationForm input[required], #registrationForm textarea[required]').each(function() {
-                if ($(this).val().trim() === '') {
-                    isValid = false;
+    
+          
+            $('#teams_container').on('click', '.remove-team-btn', function() {
+                var teamName = $(this).data('team');
+                var teamElement = $(this).closest('.form-check-inline');
+                if (confirm('Are you sure you want to remove the team "' + teamName + '"? This will remove it for all volunteers.')) {
+                    $.ajax({
+                        url: '{{ url_for("remove_team") }}',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ team_name: teamName }),
+                        success: function(response) {
+                            teamElement.remove();
+                            checkFormValidity();
+                        },
+                        error: function(xhr) {
+                            alert('Error removing team: ' + xhr.responseJSON.message);
+                        }
+                    });
                 }
             });
-
-            // Check that at least one preferred team is selected
-            if ($('input[name="preferred_teams"]:checked').length === 0) {
-                isValid = false;
+    
+            
+            $('#add_skill').click(function() {
+                var newSkillField = $('<div class="input-group mb-2 skill-entry">' +
+                    '<input type="text" class="form-control skill-input" name="skills[]" placeholder="Enter a skill" required>' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-skill-btn" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+                $('#skills_container').append(newSkillField);
+                checkFormValidity();
+            });
+    
+            $('#skills_container').on('click', '.remove-skill-btn', function() {
+                $(this).closest('.skill-entry').remove();
+                checkFormValidity();
+            });
+    
+            
+            if ($('#skills_container').children().length === 0) {
+                $('#add_skill').click();
             }
-
-            // Check that at least one skill is present and all are filled
-            var skillInputs = $('.skill-input');
-            if (skillInputs.length === 0) {
-                isValid = false;
-            } else {
+    
+           
+            $('#registrationForm').submit(function() {
+                var skillInputs = $('.skill-input');
+                if (skillInputs.length === 0) {
+                    alert('Please add at least one skill.');
+                    return false;
+                }
+                var allFilled = true;
                 skillInputs.each(function() {
+                    if ($(this).val().trim() === '') {
+                        allFilled = false;
+                    }
+                });
+                if (!allFilled) {
+                    alert('Please fill out all skill fields or remove empty ones.');
+                    return false;
+                }
+                if ($('input[name="preferred_teams"]:checked').length === 0) {
+                    alert('Please select at least one preferred team.');
+                    return false;
+                }
+            });
+    
+            function checkFormValidity() {
+                var isValid = true;
+                $('#registrationForm input[required], #registrationForm textarea[required]').each(function() {
                     if ($(this).val().trim() === '') {
                         isValid = false;
                     }
                 });
+    
+                if ($('input[name="preferred_teams"]:checked').length === 0) {
+                    isValid = false;
+                }
+    
+                var skillInputs = $('.skill-input');
+                if (skillInputs.length === 0) {
+                    isValid = false;
+                } else {
+                    skillInputs.each(function() {
+                        if ($(this).val().trim() === '') {
+                            isValid = false;
+                        }
+                    });
+                }
+    
+                $('#registerButton').prop('disabled', !isValid);
             }
-
-            // Enable or disable the submit button
-            $('#registerButton').prop('disabled', !isValid);
-        }
-
-        // Initial check
-        checkFormValidity();
-
-        // Event listeners for inputs
-        $('#registrationForm').on('input change', 'input, textarea', function() {
+    
             checkFormValidity();
+    
+            $('#registrationForm').on('input change', 'input, textarea', function() {
+                checkFormValidity();
+            });
+    
+            $('#teams_container').on('change', 'input[name="preferred_teams"]', function() {
+                checkFormValidity();
+            });
         });
-
-        // Event listener for preferred teams checkboxes
-        $('#teams_container').on('change', 'input[name="preferred_teams"]', function() {
-            checkFormValidity();
-        });
-    });
     </script>
-    <!-- Include Bootstrap JS and dependencies -->
+    
+    
+  
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>

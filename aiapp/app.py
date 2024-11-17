@@ -6,8 +6,16 @@ import io
 import queue
 from flask_wtf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
+import os
+import csv
+from datetime import datetime
 
-
+expected_headers = [
+    'id', 'full_name', 'contact_phone', 'contact_email', 'address', 
+    'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship', 
+    'date_of_birth', 'preferred_teams', 'skills', 'additional_comments'
+]
+UPLOAD_FOLDER = 'data/'
 app = Flask(__name__)
 app.secret_key = 'Pranav'  
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///volunteers.db'
@@ -17,7 +25,8 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'pranavprasv@gmail.com'
 app.config['MAIL_PASSWORD'] = 'oegj tkbm paej vwaz'
-
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 mail = Mail(app)
 clients = []
 
@@ -30,17 +39,140 @@ def event_stream():
     clients.append(q)
     try:
         while True:
-            # Wait for an item in the queue
+            
             result = q.get()
             yield f'data: {result}\n\n'
     except GeneratorExit:
         clients.remove(q)
     except Exception:
         clients.remove(q)
+import csv
+
+
+expected_headers = [
+    'volunteer id', 'full name', 'contact phone', 'contact email', 'address', 
+    'emergency contact name', 'emergency contact phone', 'emergency contact relationship', 'preferred teams', 'assigned teams'
+]
+
+def check_csv_format_and_extract_data(file_path):
+    volunteers_data = []
+
+    
+    header_map = {
+        'full_name': 'full name',
+        'contact_phone': 'contact phone',
+        'contact_email': 'contact email',
+        'address': 'address',
+        'emergency_contact_name': 'emergency contact name',
+        'emergency_contact_phone': 'emergency contact phone',
+        'emergency_contact_relationship': 'emergency contact relationship',
+        'date_of_birth': 'date of birth',
+        'preferred_teams': 'preferred teams',
+    }
+
+    with open(file_path, mode='r') as file:
+        reader = csv.DictReader(file)
+
+        global csv_headers, missing_headers
+        csv_headers = {header.strip().lower(): header for header in reader.fieldnames}
+        missing_headers = [field for field, csv_field in header_map.items() if csv_field not in csv_headers]
+        
+        if missing_headers:
+            print("CSV format is incorrect. Missing headers:", missing_headers)
+            return None
+        
+        
+        for row in reader:
+            try:
+                date_of_birth = datetime.strptime(row[csv_headers[header_map['date_of_birth']]], '%m/%d/%Y').strftime('%Y-%m-%d')
+            except ValueError:
+                print("Date of birth format is incorrect.")
+                continue  
+
+            volunteer_data = {
+                'full_name': row[csv_headers[header_map['full_name']]],
+                'contact_phone': row[csv_headers[header_map['contact_phone']]],
+                'contact_email': row[csv_headers[header_map['contact_email']]],
+                'address': row[csv_headers[header_map['address']]],
+                'emergency_contact_name': row[csv_headers[header_map['emergency_contact_name']]],
+                'emergency_contact_phone': row[csv_headers[header_map['emergency_contact_phone']]],
+                'emergency_contact_relationship': row[csv_headers[header_map['emergency_contact_relationship']]],
+                'date_of_birth': date_of_birth,
+                'preferred_teams': row[csv_headers[header_map['preferred_teams']]].split(', '),
+            }
+            volunteers_data.append(volunteer_data)
+            
+
+    print("CSV format is correct. Volunteer data extracted successfully.")
+    return volunteers_data
+
+
 
 @app.route('/')
 def index():
     return render_template('index.html', volunteers=volunteers, events=events)
+
+
+@app.route('/upload_volunteer_data', methods=['POST'])
+def upload_volunteer_data():
+    if 'volunteer_file' not in request.files:
+        return jsonify({"status": "error", "message": "No file part"}), 400
+    
+    file = request.files['volunteer_file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    if file and file.filename.endswith('.csv'):
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(file_path)
+        
+        
+        volunteers_data = check_csv_format_and_extract_data(file_path)
+        
+        if not volunteers_data:
+            return jsonify({
+                "status": "error",
+                "message": ("CSV format is incorrect. Missing headers:", missing_headers)
+            }), 400
+
+        added_count = 0  
+
+        for volunteer_data in volunteers_data:
+            
+            if not any(v['full_name'] == volunteer_data['full_name'] and v['contact_email'] == volunteer_data['contact_email'] for v in volunteers):
+                
+                volunteer = {
+                    'id': len(volunteers) + 1,
+                    'full_name': volunteer_data['full_name'],
+                    'contact_phone': volunteer_data['contact_phone'],
+                    'contact_email': volunteer_data['contact_email'],
+                    'address': volunteer_data['address'],
+                    'emergency_contact_name': volunteer_data['emergency_contact_name'],
+                    'emergency_contact_phone': volunteer_data['emergency_contact_phone'],
+                    'emergency_contact_relationship': volunteer_data['emergency_contact_relationship'],
+                    'date_of_birth': volunteer_data['date_of_birth'],
+                    'preferred_teams': volunteer_data['preferred_teams'],
+                    'assigned_teams': [],
+                    'hours': [],
+                    'attendance': {}
+                }
+                volunteers.append(volunteer)
+                added_count += 1
+            else:
+                print(f"Volunteer {volunteer_data['full_name']} with email {volunteer_data['contact_email']} already exists.")
+
+        
+        message = f"{added_count} volunteers added successfully to the database." if added_count > 0 else "No new volunteers were added."
+
+        
+        return jsonify({
+            "status": "success",
+            "message": message
+        }), 200
+
+    else:
+        return jsonify({"status": "error", "message": "Please upload a CSV file"}), 400
+
 
 
 @app.route('/calendar')
@@ -53,7 +185,7 @@ def stream():
         clients.append(q)
         try:
             while True:
-                # Wait for an item in the queue
+                
                 result = q.get()
                 yield f'data: {result}\n\n'
         except GeneratorExit:
@@ -78,15 +210,17 @@ def create_event():
         "color": event_color
     }
 
-    events.append(new_event)  # Save event in the events list
+    events.append(new_event)  
+    flash('event details have been emailed to all volunteers!')
     for q in clients:
         q.put('new_event')
 
 
 
-    # Notify volunteers
+    
     for volunteer in volunteers:
         send_event_email(volunteer['contact_email'], event_date, event_description, event_time)
+    flash('event details have been emailed to all volunteers!')
     return redirect(url_for('index'))
 
 @app.route('/get_events', methods=['GET'])
@@ -118,7 +252,7 @@ def delete_event(event_id):
     if event:
         events = [e for e in events if e['id'] != event_id]
         
-        # Notify volunteers of the cancellation
+        
         for volunteer in volunteers:
             send_cancellation_email(volunteer['contact_email'], event['description'], event['date'], event['time'])
         
@@ -131,7 +265,7 @@ def delete_event(event_id):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # Get form data
+        
         full_name = request.form['full_name']
         contact_phone = request.form['contact_phone']
         contact_email = request.form['contact_email']
@@ -143,11 +277,11 @@ def register():
         preferred_teams = request.form.getlist('preferred_teams')
         additional_comments = request.form['additional_comments']
 
-        # Get and process the skills
+        
         raw_skills = request.form.getlist('skills[]')
         processed_skills = [skill.strip() for skill in raw_skills if skill.strip()]
 
-        # Check for existing information
+        
         existing_fields = []
 
         for v in volunteers:
@@ -165,7 +299,7 @@ def register():
                 existing_fields.append('Emergency Contact Phone')
 
         if existing_fields:
-            # Map field labels to input names
+            
             field_name_mapping = {
                 'Full Name': 'full_name',
                 'Contact Phone': 'contact_phone',
@@ -177,15 +311,15 @@ def register():
                 'Date of Birth': 'date_of_birth'
             }
             duplicate_fields = [field_name_mapping[field] for field in set(existing_fields)]
-            # Generate a warning message
+            
             message = 'The following information already exists in the database: ' + ', '.join(set(existing_fields))
             flash(message, 'warning')
-            # Re-render the registration form with the existing data
-            # Convert request.form to a dictionary that preserves list values
+            
+            
             form_data = request.form.to_dict(flat=False)
             return render_template('register.html', teams=teams, form_data=form_data, duplicate_fields=duplicate_fields)
         
-        # Create the volunteer entry
+        
         volunteer = {
             'id': len(volunteers) + 1,
             'full_name': full_name,
@@ -278,32 +412,77 @@ def track_hours(volunteer_id):
     return render_template('hours.html', volunteer=volunteer)
 
 
-
-@app.route('/update_hours/<int:volunteer_id>/<string:date>', methods=['POST'])
-def update_hours(volunteer_id, date):
-    volunteer = next((v for v in volunteers if v['id'] == volunteer_id), None)
-    if volunteer:
-        new_hours = request.form['hours']
-        new_notes = request.form['notes']
+@app.route('/update_volunteer_detail', methods=['POST'])
+def update_volunteer_detail():
+    data = request.get_json()
+    
+    
+    volunteer_id = data.get('volunteer_id')
+    field = data.get('field')
+    value = data.get('value')
+    
+    
+    if not volunteer_id or not field or value is None:
+        return jsonify({'status': 'error', 'message': 'Missing required parameters.'}), 400
+    
+    
+    allowed_fields = {
+        'contact_phone',
+        'contact_email',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'address',
+        'date_of_birth',
+        'preferred_teams',
+        'skills',
+        'additional_comments'
+    }
+    
+    if field not in allowed_fields:
+        return jsonify({'status': 'error', 'message': f'Field "{field}" is not allowed to be updated.'}), 400
+    
+    
+    try:
+        volunteer_id_int = int(volunteer_id)
+    except ValueError:
+        return jsonify({'status': 'error', 'message': 'Invalid volunteer ID.'}), 400
+    
+    volunteer = next((v for v in volunteers if v['id'] == volunteer_id_int), None)
+    
+    if not volunteer:
+        return jsonify({'status': 'error', 'message': 'Volunteer not found.'}), 404
+    
+    
+    try:
+        if field in {'preferred_teams', 'skills'}:
+            
+            updated_list = [item.strip() for item in value.split(',') if item.strip()]
+            volunteer[field] = updated_list
+        elif field == 'date_of_birth':
+            
+            try:
+                
+                datetime.strptime(value, '%Y-%m-%d')
+                volunteer[field] = value
+            except ValueError:
+                return jsonify({'status': 'error', 'message': 'Invalid date format. Expected YYYY-MM-DD.'}), 400
+        else:
+            
+            volunteer[field] = value.strip()
         
+        return jsonify({'status': 'success', 'message': f'{field.replace("_", " ").capitalize()} updated successfully.'})
+    
+    except Exception as e:
         
-        for entry in volunteer['hours']:
-            if entry['date'] == date:
-                entry['hours'] = new_hours
-                entry['notes'] = new_notes
-                break
-        flash('Logged hours updated successfully!', 'success')
-        return jsonify({'status': 'success'})
-    else:
-        return jsonify({'status': 'error', 'message': 'Volunteer or hours entry not found'}), 404
+        return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
 
 
 @app.route('/attendance', methods=['GET', 'POST'])
 def track_attendance():
     if request.method == 'POST':
         session_date = request.form['date']
-        selected_volunteer_ids = request.form.getlist('volunteer_ids')  # Present volunteers
-        absent_volunteer_ids = request.form.getlist('absent_volunteer_ids')  # Absent volunteers
+        selected_volunteer_ids = request.form.getlist('volunteer_ids')  
+        absent_volunteer_ids = request.form.getlist('absent_volunteer_ids')  
 
         if not selected_volunteer_ids and not absent_volunteer_ids:
             flash('No volunteers selected for attendance.', 'warning')
@@ -312,25 +491,25 @@ def track_attendance():
         for volunteer in volunteers:
             volunteer_id_str = str(volunteer['id'])
             if volunteer_id_str in selected_volunteer_ids:
-                # Mark as present
+                
                 if session_date in volunteer['attendance']:
                     flash(f"Attendance for {volunteer['full_name']} on {session_date} has already been recorded.", 'danger')
                 else:
                     volunteer['attendance'][session_date] = 'present'
             elif volunteer_id_str in absent_volunteer_ids:
-                # Mark as absent
+                
                 if session_date in volunteer['attendance']:
                     flash(f"Attendance for {volunteer['full_name']} on {session_date} has already been recorded.", 'danger')
                 else:
                     volunteer['attendance'][session_date] = 'absent'
             else:
-                # Neither present nor absent selected for this volunteer
+                
                 pass
 
         flash('Attendance recorded successfully!', 'success')
         return redirect(url_for('index'))
 
-    # Initialize attendance dictionary if not present
+    
     for volunteer in volunteers:
         if 'attendance' not in volunteer:
             volunteer['attendance'] = {}
@@ -372,8 +551,8 @@ def reports():
     
     writer.writerow([
         'Volunteer ID', 'Full Name', 'Contact Phone', 'Contact Email', 'Address',
-        'Emergency Contact Name', 'Emergency Contact Phone', 'Emergency Contact Relationship', 'Preferred Teams', 'Assigned Teams', 'Skills', 
-        'Total Hours', 'Attendance Dates', 'Additional Comments'
+        'Emergency Contact Name', 'Emergency Contact Phone', 'Emergency Contact Relationship', 'Preferred Teams', 'Assigned Teams', 
+        'Total Hours', 'Attendance Dates'
     ])
 
     
@@ -381,15 +560,14 @@ def reports():
         total_hours = sum(float(entry['hours']) for entry in v['hours'])
         attendance_dates = "; ".join([f"{date} ({status})" for date, status in v['attendance'].items()])
         preferred_teams = ", ".join(v['preferred_teams'])  
-        assigned_teams = ", ".join(v['assigned_teams'])  
-        skills = ", ".join(v['skills'])  
+        assigned_teams = ", ".join(v['assigned_teams'])    
 
         
         writer.writerow([
             v['id'], v['full_name'], v['contact_phone'], v['contact_email'], v['address'],
             v['emergency_contact_name'], v['emergency_contact_phone'], v['emergency_contact_relationship'],
-             preferred_teams, assigned_teams, skills,
-            total_hours, attendance_dates, v['additional_comments']
+             preferred_teams, assigned_teams,
+            total_hours, attendance_dates
         ])
 
     output.seek(0)

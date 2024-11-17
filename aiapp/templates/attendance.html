@@ -114,7 +114,7 @@
         toggleRecordButton();
     });
 
-    // Ensure only one checkbox (Present or Absent) can be selected per volunteer
+   
     var rows = document.querySelectorAll('tbody tr');
     rows.forEach(function(row) {
         var presentCheckbox = row.querySelector('input.present-checkbox');
@@ -134,14 +134,14 @@
         });
     });
 
-    // Set max date for the date input to today's date
+   
     document.addEventListener('DOMContentLoaded', function() {
         var dateInput = document.getElementById('date');
         var today = new Date().toISOString().split('T')[0];
         dateInput.max = today;
     });
 
-    // Enable the Record Attendance button when any checkbox is checked
+    
     function toggleRecordButton() {
         var presentChecked = document.querySelectorAll('input.present-checkbox:checked').length;
         var absentChecked = document.querySelectorAll('input.absent-checkbox:checked').length;

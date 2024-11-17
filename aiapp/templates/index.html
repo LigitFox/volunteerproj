@@ -108,11 +108,11 @@
     }
 
     .cards-row .card {
-        height: auto; /* Allow cards to adjust height based on content */
+        height: auto;
     }
 }
 
-/* Keep other existing styles */
+
 
     
        
@@ -196,14 +196,13 @@
                 flex-direction: column;
             }
         }
-        /* Adjust the new card to accommodate the content */
 .dashboard-cards > .card {
     height: auto;
 }
 
-/* Optional: Set a maximum height and make it scrollable */
+
 .card-body {
-    max-height: 300px; /* Adjust as needed */
+    max-height: 300px;
     overflow-y: auto;
 }
 
@@ -236,7 +235,7 @@
                         <iframe src="{{ url_for('calendar') }}" frameborder="0" width="525px" height="530px" style="border-radius: 35px; overflow-y: hidden;"></iframe>
                     </div>
                     <div class="dashboard-cards">
-                        <!-- Top Row of Cards -->
+                        
                         <div class="cards-row">
                             <div class="card text-center">
                                 <div class="card-body">
@@ -253,7 +252,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- New Events Card -->
+                        
                         <div class="card text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Upcoming Events</h5>
@@ -334,12 +333,12 @@
     <script>
         
         document.addEventListener('DOMContentLoaded', function() {
-        // Establish SSE connection
+        
         var eventSource = new EventSource('{{ url_for("stream") }}');
 
         eventSource.onmessage = function(event) {
             if (event.data === 'new_event') {
-                // A new event was created, refresh the page
+               
                 location.reload();
             }
         };
@@ -351,7 +350,7 @@
         
         window.addEventListener('message', function(event) {
     if (event.data === 'eventCreated') {
-        // Reload the page or update components
+       
         location.reload();
     }
 });
@@ -362,20 +361,16 @@
         contentType: 'application/json',
         data: JSON.stringify(eventData),
         success: function(response) {
-            // Event created successfully
-            location.reload(); // Refresh the entire page
+            
+            location.reload(); 
         },
         error: function(error) {
             console.error('Error creating event:', error);
         }
     });
 }
-//setInterval(createEvent, 1000);
         $(document).ready(function() {
-            // Existing code
-            // ...
 
-            // Function to load events and update the list
             function loadEvents() {
                 $.ajax({
                     url: '{{ url_for("get_events") }}',
@@ -409,11 +404,9 @@
                 });
             }
 
-            // Call loadEvents on page load to ensure the list is up to date
+
             loadEvents();
 
-            // Event delegation for dynamically added buttons
-            // Event delegation for dynamically added buttons
 $(document).on('click', '.remove-event-btn', function() {
     var eventId = $(this).data('event-id');
     $.ajax({
@@ -421,8 +414,8 @@ $(document).on('click', '.remove-event-btn', function() {
         method: 'DELETE',
         success: function(response) {
             if (response.status === 'success') {
-                // Event deleted successfully
-                location.reload(); // Refresh the entire page
+        
+                location.reload(); 
             } else {
                 alert('Error removing event: ' + response.message);
             }
@@ -434,7 +427,6 @@ $(document).on('click', '.remove-event-btn', function() {
 });
 
 
-            // Existing code for viewVolunteersBtn
             $('#viewVolunteersBtn').click(function(e) {
                 e.preventDefault();
                 $('#volunteer-list').slideToggle(500);
